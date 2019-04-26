@@ -8,7 +8,6 @@ from rasa.nlu.config import RasaNLUModelConfig
 from rasa.nlu.model import Interpreter, Trainer
 from rasa.nlu.training_data import load_data
 from rasa.nlu.training_data.loading import load_data_from_endpoint
-from rasa.nlu.utils import read_endpoints
 from rasa.utils.endpoints import EndpointConfig
 
 logger = logging.getLogger(__name__)
@@ -151,13 +150,23 @@ def train(
     # trained in another subprocess
     trainer = Trainer(nlu_config, component_builder)
     persistor = create_persistor(storage)
-    if training_data_endpoint is not None:
-        training_data = load_data_from_endpoint(
-            training_data_endpoint, nlu_config.language
+    interpreter = None
+
+    from rasa.nlu.training_data import TrainingDataError
+
+    try:
+        if training_data_endpoint is not None:
+            training_data = load_data_from_endpoint(
+                training_data_endpoint, nlu_config.language
+            )
+        else:
+            training_data = load_data(data, nlu_config.language)
+        interpreter = trainer.train(training_data, **kwargs)
+    except TrainingDataError as e:
+        logger.error(
+            "Failed to train due to invalid training data. Use '-u' to provide valid "
+            "training data. Error message: {}".format(e.message)
         )
-    else:
-        training_data = load_data(data, nlu_config.language)
-    interpreter = trainer.train(training_data, **kwargs)
 
     if path:
         persisted_path = trainer.persist(path, persistor, project, fixed_model_name)

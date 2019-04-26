@@ -173,11 +173,7 @@ class Trainer(object):
 
         self.training_data = data
 
-        try:
-            self.training_data.validate()
-        except TrainingDataError as e:
-            logger.error("Training data invalid: {}".format(e.message))
-            return None
+        self.training_data.validate()
 
         context = kwargs
 

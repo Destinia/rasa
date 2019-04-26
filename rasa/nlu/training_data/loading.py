@@ -111,8 +111,9 @@ def _load(filename: Text, language: Optional[Text] = "en") -> Optional["Training
 
     fformat = _guess_format(filename)
     if fformat == UNK:
-        logger.warning("Unknown data format for file '{}'. Skip file.".format(filename))
-        return None
+        from rasa.nlu.training_data import TrainingDataError
+
+        raise TrainingDataError("Unknown data format for file '{}'.".format(filename))
 
     logger.info("Training data format of {} is {}".format(filename, fformat))
     reader = _reader_factory(fformat)
